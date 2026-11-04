@@ -16,6 +16,13 @@ public partial class CommonHelper
     //we use regular expression based on RFC 5322 Official Standard (see https://emailregex.com/)
     private const string EMAIL_EXPRESSION = @"^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$";
 
+    //common disposable email domains to check against
+    private static readonly HashSet<string> DisposableEmailDomains = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "tempmail.com", "throwaway.email", "guerrillamail.com", "mailinator.com",
+        "10minutemail.com", "trash-mail.com", "fakeinbox.com", "maildrop.cc"
+    };
+
     #endregion
 
     #region Methods
@@ -57,6 +64,51 @@ public partial class CommonHelper
         email = email.Trim();
 
         return GetEmailRegex().IsMatch(email);
+    }
+
+    /// <summary>
+    /// Validates email and provides detailed information about the validation
+    /// </summary>
+    /// <param name="email">Email to verify</param>
+    /// <param name="checkDisposable">Whether to check if the email is from a disposable domain</param>
+    /// <returns>Tuple containing validation result and optional message</returns>
+    public static (bool IsValid, string Message) ValidateEmailWithDetails(string email, bool checkDisposable = false)
+    {
+        email = email?.Trim();
+
+        if (string.IsNullOrEmpty(email))
+            return (false, "Email address is required");
+
+        if (email.Length > 255)
+            return (false, "Email address is too long (maximum 255 characters)");
+
+        if (!GetEmailRegex().IsMatch(email))
+            return (false, "Email address format is invalid");
+
+        if (checkDisposable && IsDisposableEmail(email))
+            return (false, "Disposable email addresses are not allowed");
+
+        return (true, string.Empty);
+    }
+
+    /// <summary>
+    /// Checks if an email address is from a known disposable email domain
+    /// </summary>
+    /// <param name="email">Email to check</param>
+    /// <returns>true if the email is from a disposable domain, otherwise false</returns>
+    public static bool IsDisposableEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+            return false;
+
+        email = email.Trim();
+        var atIndex = email.LastIndexOf('@');
+
+        if (atIndex < 0 || atIndex == email.Length - 1)
+            return false;
+
+        var domain = email[(atIndex + 1)..].ToLowerInvariant();
+        return DisposableEmailDomains.Contains(domain);
     }
 
     /// <summary>
