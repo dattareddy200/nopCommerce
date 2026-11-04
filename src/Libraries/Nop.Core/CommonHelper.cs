@@ -74,10 +74,10 @@ public partial class CommonHelper
     /// <returns>Tuple containing validation result and optional message</returns>
     public static (bool IsValid, string Message) ValidateEmailWithDetails(string email, bool checkDisposable = false)
     {
+        email = email?.Trim();
+
         if (string.IsNullOrEmpty(email))
             return (false, "Email address is required");
-
-        email = email.Trim();
 
         if (email.Length > 255)
             return (false, "Email address is too long (maximum 255 characters)");

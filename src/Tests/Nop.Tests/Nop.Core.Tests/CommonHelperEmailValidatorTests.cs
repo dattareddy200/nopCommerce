@@ -118,6 +118,14 @@ public class CommonHelperEmailValidatorTests
     }
 
     [Test]
+    public void ValidateEmailWithDetailsReturnsCorrectResultForWhitespaceOnlyEmail()
+    {
+        var (isValid, message) = CommonHelper.ValidateEmailWithDetails("   ");
+        isValid.Should().BeFalse();
+        message.Should().Be("Email address is required");
+    }
+
+    [Test]
     public void ValidateEmailWithDetailsReturnsCorrectResultForTooLongEmail()
     {
         var email = new string('a', 250) + "@test.com";
